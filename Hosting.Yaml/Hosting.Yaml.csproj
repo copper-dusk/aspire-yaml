@@ -4,10 +4,11 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>CopperDusk.Aspire.Hosting.Yaml</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.Hosting.AppHost" Version="13.2.4" />
+      <PackageReference Include="Aspire.Hosting.AppHost" Version="13.3.0" />
     </ItemGroup>
 
 </Project>
