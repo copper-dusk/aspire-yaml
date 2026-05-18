@@ -49,16 +49,23 @@ public static class ResourceBuilderExtensions
     )
     {
         var yaml = builder.EnsureYaml();
-        
-        // todo: Detect yaml, json or path content
+
+        var trimmed = content.TrimStart();
+        YamlSource source = trimmed.StartsWith('{') || trimmed.StartsWith('[')
+            ? new RawJsonSource(content)
+            : new RawYamlSource(content);
+
+        var resource = new YamlSourceResource
+        {
+            Name = name,
+            Source = source,
+            FileName = fileName ?? $"{name}.yaml",
+        };
+
+        yaml.Resource.AddYamlResource(resource);
 
         return builder
-            .AddResource(new YamlSourceResource
-            {
-                Name = name,
-                Source = new RawJsonSource(content),
-                FileName = fileName ?? $"{name}.yaml",
-            })
+            .AddResource(resource)
             .WithParentRelationship(yaml)
         ;
     }

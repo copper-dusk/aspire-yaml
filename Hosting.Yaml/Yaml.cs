@@ -6,10 +6,11 @@ internal class Yaml : IResource
 
     public ResourceAnnotationCollection Annotations { get; } = [];
     
-    private readonly IDictionary<string, YamlSourceResource> yamlResources = new Dictionary<string, YamlSourceResource>();
+    private readonly List<YamlSourceResource> yamlResources = [];
+    public IEnumerable<YamlSourceResource> YamlResources => yamlResources;
 
     public void AddYamlResource(YamlSourceResource yamlSourceResource)
     {
-        yamlResources.Add(yamlSourceResource.OutputPath, yamlSourceResource);
+        yamlResources.Add(yamlSourceResource);
     }
 }
