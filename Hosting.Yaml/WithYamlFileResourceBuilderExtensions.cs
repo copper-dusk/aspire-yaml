@@ -21,6 +21,7 @@ public static class WithYamlFileResourceBuilderExtensions
     )
     {
         var file = group.ApplicationBuilder.AddYamlFile(name, content, fileName);
+        
         return group.AttachYamlFile(file);
     }
 
@@ -32,6 +33,7 @@ public static class WithYamlFileResourceBuilderExtensions
     )
     {
         var file = group.ApplicationBuilder.AddYamlFile(name, documents, fileName);
+        
         return group.AttachYamlFile(file);
     }
 

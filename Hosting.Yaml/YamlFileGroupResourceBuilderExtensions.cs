@@ -27,49 +27,7 @@ public static class YamlFileGroupResourceBuilderExtensions
             .ExcludeFromManifest()
         ;
 
-        groupBuilder.OnInitializeResource(static async (group, initializeResourceEvent, cancellationToken) =>
-        {
-            var eventing = initializeResourceEvent.Eventing;
-            var notifications = initializeResourceEvent.Notifications;
-            var services = initializeResourceEvent.Services;
-
-            var logger = services.GetRequiredService<ResourceLoggerService>().GetLogger(group);
-
-            try
-            {
-                Directory.CreateDirectory(group.Path);
-
-                await eventing.PublishAsync(new BeforeResourceStartedEvent(group, services), cancellationToken);
-
-                foreach (var file in group.Files)
-                {
-                    var destination = Path.Combine(group.Path, file.FileName ?? $"{file.Name}.yaml");
-                    File.Copy(file.OutputPath, destination, overwrite: true);
-                    logger.LogInformation("Copied {Source} to {Destination}", file.OutputPath, destination);
-                }
-
-                await notifications.PublishUpdateAsync(group, previous => previous with
-                {
-                    State = new(KnownResourceStates.Running, KnownResourceStateStyles.Success),
-                });
-
-                await eventing.PublishAsync(new ResourceReadyEvent(group, services), cancellationToken);
-
-                await notifications.PublishUpdateAsync(group, previous => previous with
-                {
-                    State = new(KnownResourceStates.Finished, KnownResourceStateStyles.Success),
-                });
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to provision YAML file group {ResourceName}.", group.Name);
-
-                await notifications.PublishUpdateAsync(group, previous => previous with
-                {
-                    State = new(KnownResourceStates.FailedToStart, KnownResourceStateStyles.Error),
-                });
-            }
-        });
+        groupBuilder.OnInitializeResource(OnFileGroupInitialize);
 
         foreach (var file in files)
         {
@@ -77,5 +35,40 @@ public static class YamlFileGroupResourceBuilderExtensions
         }
 
         return groupBuilder;
+    }
+
+    private static async Task OnFileGroupInitialize(YamlFileGroupResource group, InitializeResourceEvent initializeResourceEvent, CancellationToken cancellationToken)
+    {
+        var eventing = initializeResourceEvent.Eventing;
+        var notifications = initializeResourceEvent.Notifications;
+        var services = initializeResourceEvent.Services;
+
+        var logger = services.GetRequiredService<ResourceLoggerService>().GetLogger(group);
+
+        try
+        {
+            Directory.CreateDirectory(group.Path);
+
+            await eventing.PublishAsync(new BeforeResourceStartedEvent(group, services), cancellationToken);
+
+            foreach (var file in group.Files)
+            {
+                var destination = Path.Combine(group.Path, file.FileName ?? $"{file.Name}.yaml");
+                File.Copy(file.OutputPath, destination, overwrite: true);
+                logger.LogInformation("Copied {Source} to {Destination}", file.OutputPath, destination);
+            }
+
+            await notifications.PublishUpdateAsync(group, previous => previous with { State = new(KnownResourceStates.Running, KnownResourceStateStyles.Success), });
+
+            await eventing.PublishAsync(new ResourceReadyEvent(group, services), cancellationToken);
+
+            await notifications.PublishUpdateAsync(group, previous => previous with { State = new(KnownResourceStates.Finished, KnownResourceStateStyles.Success), });
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to provision YAML file group {ResourceName}.", group.Name);
+
+            await notifications.PublishUpdateAsync(group, previous => previous with { State = new(KnownResourceStates.FailedToStart, KnownResourceStateStyles.Error), });
+        }
     }
 }
