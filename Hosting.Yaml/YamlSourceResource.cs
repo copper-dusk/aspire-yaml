@@ -1,5 +1,8 @@
 namespace CopperDusk.Aspire.Hosting.Yaml;
 
+/// <summary>
+///     Contains information about how a YAML file will participate in the orchestration.
+/// </summary>
 public class YamlSourceResource : IResource, IValueProvider
 {
     public required string Name { get; init; }

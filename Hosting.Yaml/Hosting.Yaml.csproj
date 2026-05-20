@@ -1,15 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>CopperDusk.Aspire.Hosting.Yaml</RootNamespace>
+        <PackageName>CopperDusk.Aspire.Hosting.Yaml</PackageName>
+        <AssemblyName>CopperDusk.Aspire.Hosting.Yaml</AssemblyName>
+        <IsPackable>true</IsPackable>
+        <RepositoryUrl>https://github.com/copper-dusk/aspire-yaml</RepositoryUrl>
+        <!--<PackageIcon>/copper-dusk-logo.png</PackageIcon>-->
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.Hosting.AppHost" Version="13.3.0" />
+      <PackageReference Include="Aspire.Hosting.AppHost" Version="13.3.4" />
       <PackageReference Include="YamlDotNet" Version="17.1.0" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!--<Content Include="../copper-dusk-logo.png" Link="/copper-dusk-logo.png" Pack="true" PackagePath="/" >-->
+        <!--    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>-->
+        <!--</Content>-->
+        <Content Include="../readme.md" Pack="true" PackagePath="/">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+    
 </Project>
