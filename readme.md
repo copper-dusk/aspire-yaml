@@ -1,7 +1,14 @@
-# Aspire.Hosting.Yaml
+# CopperDusk.Aspire.Hosting.Yaml
 
 An Aspire hosting integration for authoring YAML files inline in your AppHost and
 materializing them to disk at startup, ready to be bind-mounted into containers.
+
+I despise working with YAML, but even I can't deny that they have their uses and 
+are ubiquitous.  From time to time, you may need to include YAML files in your 
+deployments.  Naturally, managing files in a project, bundling them on 
+output, and then referencing them at runtime is convoluted and unwieldy.
+
+So, I made this library to let you manage YAML files at runtime!
 
 The intent is to let you declare configuration files (Dapr components, Kubernetes
 manifests, app config, etc.) alongside the rest of your distributed application
@@ -21,6 +28,21 @@ awaited, dictionaries and enumerables are flattened, and everything else is
 reflected over as a structured object. This is what lets you embed
 `ReferenceExpression.Create($"... {postgres.GetEndpoint("tcp").Property(...)} ...")`
 inside the object passed to `AddYaml` and have it resolve at render time.
+
+## Why not incremental source generators?
+
+It's a great thought, honestly!  The main driving factor is that these YAML files 
+are more than just static output.
+
+Specifically, we support flowing values and expressions from Aspire into the YAML files.
+This cannot be achieved with incremental source generators, as the Aspire orchestration 
+is only available at runtime and also changes between runs (think ports)!
+
+Second, depending on how your project is defined and the Aspire target, the YAML files 
+may be handled in very different ways.
+
+So yeah, hopefully this explanation is sufficient and also helps you understand the reasoning
+behind this library.
 
 ## API
 
@@ -81,3 +103,7 @@ builder.AddDiagridDashboard(/* ... */)
   13.3.4 and `YamlDotNet` 17.1.0).
 - `AppHost/` — a sample AppHost that exercises the API against Postgres and the
   Diagrid Dapr dashboard.
+
+## About
+
+This project is created and maintained by [Alexander Trauzzi](https://github.com/atrauzzi).

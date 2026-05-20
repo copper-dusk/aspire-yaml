@@ -1,3 +1,4 @@
+using CommunityToolkit.Aspire.Hosting.Dapr;
 using CopperDusk.Aspire.Hosting.Yaml;
 using Diagrid.Aspire.Hosting.Dashboard;
 using Projects;
@@ -63,7 +64,7 @@ var dashboard = builder
     .WithYamlBindMount(testObjectYaml, "/app/components/test-json.yaml")
     .WaitFor(stateDatabase);
 
-var daprYamlFiles = builder.AddYamlFileGroup("dapr-yaml-files", 
+var daprComponents = builder.AddYamlFileGroup("dapr-components", 
 [
     builder.AddYamlFile("dapr-state", new
     {
@@ -83,8 +84,7 @@ var daprYamlFiles = builder.AddYamlFileGroup("dapr-yaml-files",
                 {
                     name = "connectionString",
                     value = ReferenceExpression.Create(
-                        // note: If you ever want the host-side view (Dapr running outside containers), swap postgres.Resource.Name → ...Property(EndpointProperty.Host) and TargetPort → Port.
-                        $"host={postgres.Resource.Name} user={username.Resource} password={password.Resource} port={postgres.GetEndpoint("tcp").Property(EndpointProperty.TargetPort)} connect_timeout=10 database={stateDatabase.Resource.DatabaseName}"
+                        $"host={postgres.Resource.PrimaryEndpoint.Property(EndpointProperty.Host)} user={username.Resource} password={password.Resource} port={postgres.Resource.PrimaryEndpoint.Property(EndpointProperty.Port)} connect_timeout=10 database={stateDatabase.Resource.DatabaseName}"
                     ),
                 },
             },
@@ -94,9 +94,12 @@ var daprYamlFiles = builder.AddYamlFileGroup("dapr-yaml-files",
 
 var testApi = builder
     .AddProject<TestApi>("test-api")
-    .WithDaprSidecar(new()
+    .WaitFor(stateDatabase)
+    .WithDaprSidecar(new DaprSidecarOptions
     {
-        ResourcesPaths = daprYamlFiles.Resource.Path,
+        ResourcesPaths = [
+            daprComponents.Resource.Path,
+        ],
     });
 
 builder.Build().Run();
