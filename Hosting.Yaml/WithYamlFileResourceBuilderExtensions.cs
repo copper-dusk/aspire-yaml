@@ -36,9 +36,10 @@ public static class WithYamlFileResourceBuilderExtensions
     }
 
     /// <summary>
-    ///     Registers a yaml file with the group: records it for the copy step, re-parents it
-    ///     under the group in the dashboard (replacing the default catch-all parent), and
-    ///     wires a wait so the group only fires after the file has been rendered.
+    ///     Registers a yaml file with the group: records it for the copy step and wires a wait
+    ///     so the group only fires after the file has been rendered. The file keeps its default
+    ///     parent (the root <see cref="YamlFiles"/> resource) since groups are just a flat copy
+    ///     step and don't form a real hierarchy in the dashboard.
     /// </summary>
     internal static IResourceBuilder<YamlFileGroupResource> AttachYamlFile(
         this IResourceBuilder<YamlFileGroupResource> group,
@@ -46,20 +47,6 @@ public static class WithYamlFileResourceBuilderExtensions
     )
     {
         group.Resource.Files.Add(file.Resource);
-
-        // Relationship type string used by Aspire's WithParentRelationship; we strip any
-        // existing parent so re-parenting to the group is unambiguous in the dashboard.
-        var existingParents = file.Resource.Annotations
-            .OfType<ResourceRelationshipAnnotation>()
-            .Where(a => a.Type == "Parent")
-            .ToList();
-
-        foreach (var annotation in existingParents)
-        {
-            file.Resource.Annotations.Remove(annotation);
-        }
-
-        file.WithParentRelationship(group);
 
         group.WaitForCompletion(file);
 
