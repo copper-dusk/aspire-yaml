@@ -65,7 +65,7 @@ Extensions on `IDistributedApplicationBuilder` for producing one rendered file:
   sources bundled into a single multi-document stream (`---`-separated). Use this
   via collection-expression syntax (`[sourceA, sourceB]`) to mix different
   source kinds in one file.
-- `AddYamlDocuments(name, IEnumerable<object> documents, fileName?)` —
+- `AddMultiYamlFile(name, IEnumerable<object> documents, fileName?)` —
   convenience for a multi-document file built from plain objects.
 - `WithYamlBindMount(yamlResource, target, isReadOnly?)` — mounts a rendered
   YAML file into a container at `target` and waits for it to finish rendering.

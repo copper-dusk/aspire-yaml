@@ -28,7 +28,7 @@ var testMultiDocYaml = builder.AddYamlFile("test-multi-doc", [
     }),
 ]);
 
-var testObjectYaml = builder.AddYamlFile("test-object", new
+var diagridDashboardState = builder.AddYamlFile("diagrid-dashboard-state", new
 {
     apiVersion = "dapr.io/v1alpha1",
     kind = "Component",
@@ -58,10 +58,10 @@ var testObjectYaml = builder.AddYamlFile("test-object", new
 var dashboard = builder
     .AddDiagridDashboard(configuration: new()
     {
-        ComponentFile = "test-json.yaml",
+        ComponentFile = diagridDashboardState.Resource.FileName,
     })
     .WithReference(postgres)
-    .WithYamlBindMount(testObjectYaml, "/app/components/test-json.yaml")
+    .WithYamlBindMount(diagridDashboardState, $"/app/components/{diagridDashboardState.Resource.FileName}")
     .WaitFor(stateDatabase);
 
 var daprComponents = builder.AddYamlFileGroup("dapr-components", 

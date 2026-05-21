@@ -11,7 +11,7 @@ public class YamlSourceResource : IResource, IValueProvider
 
     public required YamlSource Source { get; init; }
 
-    public string? FileName { get; init; }
+    public required string FileName { get; init; }
 
     private readonly string outputPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.yaml");
     public string OutputPath => outputPath;

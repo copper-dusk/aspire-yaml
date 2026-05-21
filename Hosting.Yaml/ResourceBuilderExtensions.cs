@@ -53,4 +53,22 @@ public static class ResourceBuilderExtensions
             isReadOnly
         );
     }
+
+    public static IResourceBuilder<ContainerResource> WithYamlBindMount(
+        this IResourceBuilder<ContainerResource> containerResource,
+        IResourceBuilder<YamlFileGroupResource> yamlFileGroup,
+        string target,
+        bool isReadOnly = false
+    )
+    {
+        var path = yamlFileGroup.Resource.Path;
+
+        containerResource.WaitForCompletion(yamlFileGroup);
+
+        return containerResource.WithBindMount(
+            path,
+            target,
+            isReadOnly
+        );
+    }
 }

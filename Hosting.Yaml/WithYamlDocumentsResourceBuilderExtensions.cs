@@ -9,7 +9,7 @@ public static class WithYamlDocumentsResourceBuilderExtensions
         string? fileName = null
     )
     {
-        var file = group.ApplicationBuilder.AddYamlDocuments(name, documents, fileName);
+        var file = group.ApplicationBuilder.AddMultiYamlFile(name, documents, fileName);
         return group.AttachYamlFile(file);
     }
 }
