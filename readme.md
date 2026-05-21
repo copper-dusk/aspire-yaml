@@ -3,17 +3,18 @@
 An Aspire hosting integration for dynamically authoring YAML files from your AppHost and 
 materializing them to disk at startup, ready for use!
 
-I despise working with YAML, but even I can't deny that they have their uses and 
-are ubiquitous.  From time to time, you may need to include YAML files in your 
-deployments.  Naturally, managing files in a project, bundling them on 
+I despise working with YAML, but even I can't deny that it has its uses and 
+is ubiquitous.  As a result, from time to time, you may need to include YAML files 
+in your deployments.  Naturally, managing files in a project, bundling them on 
 output, and then referencing them at runtime is convoluted and unwieldy.
 
-So, I made this library to let you manage YAML files at runtime!
+So, I made this library to let you manage YAML files at runtime from Aspire!
 
-The intent is to let you declare configuration files (Dapr components, Kubernetes
+The idea is to let you declare configuration files (Dapr components, Kubernetes
 manifests, app config, etc.) alongside the rest of your distributed application
-model — so they can reference Aspire parameters, resources, and endpoints
-directly instead of being maintained as separate static files.
+model.  Then, they can reference Aspire parameters, resources, and endpoints
+directly instead of being maintained as separate static files.  Want strong typing 
+for YAML data structures?  [No probalo!](https://www.youtube.com/watch?v=ToJlOND8TfU)
 
 ## How it works
 
@@ -87,6 +88,9 @@ For consumers that need a directory of files instead of a single path:
   and attaching the result.
 - `WithYamlDocuments(group, name, IEnumerable<object>, fileName?)` — declares a
   new multi-document file directly on a group.
+- `WithYamlBindMount(yamlFileGroup, target, isReadOnly?)` — mounts the group's
+  whole rendered directory into a container at `target` and waits for the group
+  to finish rendering.
 
 The group exposes `Resource.Path` (the rendered directory) which can be passed
 to integrations such as Dapr's `DaprSidecarOptions.ResourcesPaths`.
@@ -167,6 +171,13 @@ builder
     });
 ```
 
+Or bind-mount the whole group directory into a container:
+
+```csharp
+builder.AddSomeContainer(/* ... */)
+    .WithYamlBindMount(daprComponents, "/app/components");
+```
+
 ## Project layout
 
 - `Hosting.Yaml/` — the library (`net10.0`, targets `Aspire.Hosting.AppHost`
@@ -175,4 +186,6 @@ builder
 
 ## About
 
-This project is created and maintained by [Alexander Trauzzi](https://github.com/atrauzzi).
+This project is created and maintained by [Alexander Trauzzi](https://github.com/atrauzzi) in what little spare time he has.
+
+_No, I don't normally refer to myself in the third person..._
