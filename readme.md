@@ -1,5 +1,7 @@
 # CopperDusk.Aspire.Hosting.Yaml
 
+![NuGet Version](https://img.shields.io/nuget/v/CopperDusk.Aspire.Hosting.Yaml)
+
 An Aspire hosting integration for dynamically authoring YAML files from your AppHost and 
 materializing them to disk at startup, ready for use!
 
