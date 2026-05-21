@@ -11,6 +11,7 @@
         <RepositoryUrl>https://github.com/copper-dusk/aspire-yaml</RepositoryUrl>
         <!--<PackageIcon>/copper-dusk-logo.png</PackageIcon>-->
         <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     </PropertyGroup>
 
     <ItemGroup>
