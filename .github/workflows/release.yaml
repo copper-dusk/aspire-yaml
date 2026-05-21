@@ -1,0 +1,52 @@
+name: "Release"
+on:
+  workflow_dispatch:
+  release:
+    types: [ published ]
+
+jobs:
+  
+  package:
+    name: "Package"
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+      packages: 'write'
+    
+    steps:
+
+      - name: "Setup dotnet"
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.*.*
+
+      - name: "Checkout"
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: "Build Solution"
+        working-directory: ./
+        run: |
+          dotnet build
+
+      - name: "Determine version"
+        id: choose_version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "version=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-development" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: "Pack NuGet package"
+        working-directory: ./Hosting.Yaml
+        run: |
+          dotnet pack --configuration Release --output ./nupkg /p:PackageVersion=${{ steps.choose_version.outputs.version }}
+
+      - name: "Publish to NuGet.org"
+        working-directory: ./Hosting.Yaml
+        run: |
+          dotnet nuget push ./nupkg/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{ secrets.NUGET_API_KEY }} --skip-duplicate
