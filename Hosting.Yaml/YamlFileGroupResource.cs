@@ -1,3 +1,5 @@
+using static CopperDusk.Aspire.Hosting.Yaml.TempYamlPath;
+
 namespace CopperDusk.Aspire.Hosting.Yaml;
 
 /// <summary>
@@ -14,7 +16,7 @@ public class YamlFileGroupResource : IResource, IResourceWithWaitSupport, IValue
 
     internal List<YamlSourceResource> Files { get; } = [];
 
-    private readonly string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"yaml-group-{Guid.NewGuid():N}");
+    private readonly string path = BuildTempYamlPath(Guid.NewGuid().ToString("N"));
     public string Path => path;
 
     public ValueTask<string?> GetValueAsync(CancellationToken cancellationToken = default) =>

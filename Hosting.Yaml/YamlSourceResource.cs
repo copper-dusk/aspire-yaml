@@ -1,3 +1,5 @@
+using static CopperDusk.Aspire.Hosting.Yaml.TempYamlPath;
+
 namespace CopperDusk.Aspire.Hosting.Yaml;
 
 /// <summary>
@@ -13,7 +15,7 @@ public class YamlSourceResource : IResource, IValueProvider
 
     public required string FileName { get; init; }
 
-    private readonly string outputPath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.yaml");
+    private readonly string outputPath = BuildTempYamlPath($"{Guid.NewGuid():N}.yaml");
     public string OutputPath => outputPath;
 
     public ValueTask<string?> GetValueAsync(CancellationToken cancellationToken = default) =>
