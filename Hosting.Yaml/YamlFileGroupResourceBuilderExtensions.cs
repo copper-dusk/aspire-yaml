@@ -47,15 +47,22 @@ public static class YamlFileGroupResourceBuilderExtensions
 
         try
         {
-            Directory.CreateDirectory(group.Path);
+            Directory.CreateDirectory(group.HostPath);
+            Directory.CreateDirectory(group.ContainerPath);
 
             await eventing.PublishAsync(new BeforeResourceStartedEvent(group, services), cancellationToken);
 
             foreach (var file in group.Files)
             {
-                var destination = Path.Combine(group.Path, file.FileName ?? $"{file.Name}.yaml");
-                File.Copy(file.OutputPath, destination, overwrite: true);
-                logger.LogInformation("Copied {Source} to {Destination}", file.OutputPath, destination);
+                var fileName = file.FileName ?? $"{file.Name}.yaml";
+
+                var hostDestination = Path.Combine(group.HostPath, fileName);
+                File.Copy(file.HostOutputPath, hostDestination, overwrite: true);
+                logger.LogInformation("Copied {Source} to {Destination}", file.HostOutputPath, hostDestination);
+
+                var containerDestination = Path.Combine(group.ContainerPath, fileName);
+                File.Copy(file.ContainerOutputPath, containerDestination, overwrite: true);
+                logger.LogInformation("Copied {Source} to {Destination}", file.ContainerOutputPath, containerDestination);
             }
 
             await notifications.PublishUpdateAsync(group, previous => previous with { State = new(KnownResourceStates.Running, KnownResourceStateStyles.Success), });

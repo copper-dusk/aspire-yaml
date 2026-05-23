@@ -43,7 +43,10 @@ public static class ResourceBuilderExtensions
         bool isReadOnly = false
     )
     {
-        var path = yamlResource.Resource.OutputPath;
+        // Container-side mounts get the container-perspective rendering so any endpoint
+        // expressions inside the file resolve to service DNS + target ports rather than
+        // localhost + proxied ports.
+        var path = yamlResource.Resource.ContainerOutputPath;
 
         containerResource.WaitForCompletion(yamlResource);
 
@@ -61,7 +64,7 @@ public static class ResourceBuilderExtensions
         bool isReadOnly = false
     )
     {
-        var path = yamlFileGroup.Resource.Path;
+        var path = yamlFileGroup.Resource.ContainerPath;
 
         containerResource.WaitForCompletion(yamlFileGroup);
 

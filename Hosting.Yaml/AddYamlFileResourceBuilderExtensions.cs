@@ -1,3 +1,4 @@
+using CopperDusk.Aspire.Hosting.Yaml.BifurcatedEndpoint;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -86,11 +87,13 @@ public static class AddYamlFileResourceBuilderExtensions
 
             try
             {
-                var rendered = await provisioner.RenderContentAsync(res, cancellationToken);
+                var hostRendered = await provisioner.RenderContentAsync(res, YamlPerspective.Host, cancellationToken);
+                await File.WriteAllTextAsync(res.HostOutputPath, hostRendered, cancellationToken);
+                logger.LogInformation("Rendered {FileName} (host) to {OutputPath}:\n{Content}", res.FileName, res.HostOutputPath, hostRendered);
 
-                logger.LogInformation("Rendered {FileName} to {OutputPath}:\n{Content}", res.FileName, res.OutputPath, rendered);
-
-                await File.WriteAllTextAsync(res.OutputPath, rendered, cancellationToken);
+                var containerRendered = await provisioner.RenderContentAsync(res, YamlPerspective.Container, cancellationToken);
+                await File.WriteAllTextAsync(res.ContainerOutputPath, containerRendered, cancellationToken);
+                logger.LogInformation("Rendered {FileName} (container) to {OutputPath}:\n{Content}", res.FileName, res.ContainerOutputPath, containerRendered);
 
                 await eventing.PublishAsync(new BeforeResourceStartedEvent(res, services), cancellationToken);
 
