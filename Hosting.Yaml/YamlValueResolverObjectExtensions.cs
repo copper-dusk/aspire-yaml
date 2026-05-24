@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using CopperDusk.Aspire.Hosting.Yaml.BifurcatedEndpoint;
 using YamlDotNet.Serialization;
 
 namespace CopperDusk.Aspire.Hosting.Yaml;
@@ -15,7 +16,8 @@ internal static class YamlValueResolverObjectExtensions
     ///     Recursively converts an arbitrary CLR value into a tree of plain objects, dictionaries,
     ///     and lists that YamlDotNet can serialize directly.
     ///     <br /><br />
-    ///     Also unwraps <see cref="IResourceBuilder{T}"/> to its underlying resource,
+    ///     Also unwraps <see cref="IResourceBuilder{T}"/> to its underlying resource, dispatches
+    ///     <see cref="PerspectiveAware"/> values against the active <paramref name="perspective"/>,
     ///     awaits <see cref="IValueProvider"/> values, leaves primitives and well-known scalar
     ///     types as-is, walks <see cref="IDictionary"/> and <see cref="IEnumerable"/> elements, and
     ///     otherwise reflects over public readable instance properties, honouring
@@ -25,6 +27,7 @@ internal static class YamlValueResolverObjectExtensions
     public static async Task<object?> ResolveForYamlAsync(
         this object? value,
         INamingConvention namingConvention,
+        YamlPerspective perspective,
         CancellationToken cancellationToken = default
     )
     {
@@ -44,7 +47,24 @@ internal static class YamlValueResolverObjectExtensions
             // Unwrap the builder by reading its Resource property, then recurse on the
             // underlying resource so the builder wrapper never appears in the YAML.
             var resource = resourceBuilderInterface.GetProperty(nameof(IResourceBuilder<IResource>.Resource))?.GetValue(value);
-            return await resource.ResolveForYamlAsync(namingConvention, cancellationToken);
+            return await resource.ResolveForYamlAsync(namingConvention, perspective, cancellationToken);
+        }
+
+        // Perspective-aware values pick a branch based on the current render target — check
+        // this BEFORE the generic IValueProvider branch since PerspectiveValue implements both
+        // and the generic path would silently collapse to the host view.
+        if (value is PerspectiveAware perspectiveAware)
+        {
+            return await perspectiveAware.GetValueAsync(perspective, cancellationToken);
+        }
+
+        // ReferenceExpression's own GetValueAsync resolves each inner provider via the plain
+        // IValueProvider path, which loses our perspective signal for any PerspectiveAware
+        // values embedded inside the interpolation. Re-implement the format step ourselves so
+        // those embedded values get the perspective treatment.
+        if (value is ReferenceExpression referenceExpression)
+        {
+            return await ResolveReferenceExpressionAsync(referenceExpression, perspective, cancellationToken);
         }
 
         // IValueProvider is Aspire's deferred-value abstraction (e.g. parameters, references
@@ -81,7 +101,7 @@ internal static class YamlValueResolverObjectExtensions
             var result = new Dictionary<object, object?>();
             foreach (DictionaryEntry entry in dictionary)
             {
-                result[entry.Key] = await entry.Value.ResolveForYamlAsync(namingConvention, cancellationToken);
+                result[entry.Key] = await entry.Value.ResolveForYamlAsync(namingConvention, perspective, cancellationToken);
             }
             return result;
         }
@@ -95,7 +115,7 @@ internal static class YamlValueResolverObjectExtensions
 
             foreach (var item in enumerable)
             {
-                list.Add(await item.ResolveForYamlAsync(namingConvention, cancellationToken));
+                list.Add(await item.ResolveForYamlAsync(namingConvention, perspective, cancellationToken));
             }
 
             return list;
@@ -128,9 +148,58 @@ internal static class YamlValueResolverObjectExtensions
             var key = !string.IsNullOrEmpty(alias) ? alias : namingConvention.Apply(prop.Name);
             // Recurse so nested objects, collections, and deferred values are all flattened
             // before serialization.
-            members[key] = await prop.GetValue(value).ResolveForYamlAsync(namingConvention, cancellationToken);
+            members[key] = await prop.GetValue(value).ResolveForYamlAsync(namingConvention, perspective, cancellationToken);
         }
 
         return members;
     }
+
+    /// <summary>
+    ///     Mirrors <see cref="ReferenceExpression.GetValueAsync"/>'s positional <c>string.Format</c>
+    ///     step but resolves each inner provider via <see cref="ResolveProviderAsync"/> so any
+    ///     <see cref="PerspectiveAware"/> values embedded in the interpolation pick the right
+    ///     branch. Conditional expressions are uncommon in YAML authoring and intersect awkwardly
+    ///     with perspective swaps, so we hand those back to Aspire's own resolver.
+    /// </summary>
+    private static async Task<string?> ResolveReferenceExpressionAsync(
+        ReferenceExpression expression,
+        YamlPerspective perspective,
+        CancellationToken cancellationToken
+    )
+    {
+        if (expression.IsConditional)
+        {
+            return await expression.GetValueAsync(cancellationToken);
+        }
+
+        var args = new object?[expression.ValueProviders.Count];
+        for (var i = 0; i < expression.ValueProviders.Count; i++)
+        {
+            var resolved = await ResolveProviderAsync(expression.ValueProviders[i], perspective, cancellationToken);
+            var formatSpecifier = i < expression.StringFormats.Count ? expression.StringFormats[i] : null;
+            // Per-provider format specifiers (e.g. {0:X}) are reapplied around the resolved value.
+            args[i] = string.IsNullOrEmpty(formatSpecifier)
+                ? resolved
+                : string.Format($"{{0:{formatSpecifier}}}", resolved);
+        }
+
+        return string.Format(expression.Format, args);
+    }
+
+    /// <summary>
+    ///     Resolves a single <see cref="IValueProvider"/> with perspective awareness: dispatches
+    ///     to <see cref="PerspectiveAware"/> when applicable, recurses into nested
+    ///     <see cref="ReferenceExpression"/>s, and otherwise falls back to the standard
+    ///     <see cref="IValueProvider.GetValueAsync"/>.
+    /// </summary>
+    private static async Task<string?> ResolveProviderAsync(
+        IValueProvider provider,
+        YamlPerspective perspective,
+        CancellationToken cancellationToken
+    ) => provider switch
+    {
+        PerspectiveAware pa => await pa.GetValueAsync(perspective, cancellationToken),
+        ReferenceExpression nested => await ResolveReferenceExpressionAsync(nested, perspective, cancellationToken),
+        _ => await provider.GetValueAsync(cancellationToken),
+    };
 }

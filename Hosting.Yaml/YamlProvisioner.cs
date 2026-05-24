@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using CopperDusk.Aspire.Hosting.Yaml.BifurcatedEndpoint;
 using YamlDotNet.RepresentationModel;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -22,10 +23,12 @@ internal class YamlProvisioner
 
     /// <summary>
     ///     Renders the final YAML string for the given resource by dispatching to
-    ///     <see cref="RenderSourceAsync"/> on its source variant.
+    ///     <see cref="RenderSourceAsync"/> on its source variant, using the supplied perspective
+    ///     to decide how any <see cref="PerspectiveAware"/> values inside the source tree should
+    ///     resolve.
     /// </summary>
-    public Task<string> RenderContentAsync(YamlSourceResource resource, CancellationToken cancellationToken) =>
-        RenderSourceAsync(resource.Source, cancellationToken);
+    public Task<string> RenderContentAsync(YamlSourceResource resource, YamlPerspective perspective, CancellationToken cancellationToken) =>
+        RenderSourceAsync(resource.Source, perspective, cancellationToken);
 
     /// <summary>
     ///     Renders a single <see cref="YamlSource"/> to its YAML string form. Composed recursively
@@ -33,12 +36,12 @@ internal class YamlProvisioner
     ///     rendering strategy (raw passthrough, JSON conversion, object serialization, or further
     ///     nesting). Throws <see cref="NotSupportedException"/> for unknown variants.
     /// </summary>
-    private static async Task<string> RenderSourceAsync(YamlSource source, CancellationToken cancellationToken) => source switch
+    private static async Task<string> RenderSourceAsync(YamlSource source, YamlPerspective perspective, CancellationToken cancellationToken) => source switch
     {
         RawYamlSource raw => ValidateYaml(raw.Yaml),
         RawJsonSource json => ConvertJsonToYaml(json.Json),
-        ObjectYamlSource obj => Serializer.Serialize(await obj.Thing.ResolveForYamlAsync(NamingConvention, cancellationToken)),
-        MultiDocumentYamlSource multi => await JoinDocumentsAsync(multi.Documents, cancellationToken),
+        ObjectYamlSource obj => Serializer.Serialize(await obj.Thing.ResolveForYamlAsync(NamingConvention, perspective, cancellationToken)),
+        MultiDocumentYamlSource multi => await JoinDocumentsAsync(multi.Documents, perspective, cancellationToken),
         _ => throw new NotSupportedException($"Unsupported source type: {source.GetType().Name}"),
     };
 
@@ -47,7 +50,7 @@ internal class YamlProvisioner
     ///     <c>---</c> to produce a single multi-document YAML stream (the form Kubernetes and
     ///     similar tools accept when bundling manifests in one file).
     /// </summary>
-    private static async Task<string> JoinDocumentsAsync(IEnumerable<YamlSource> documents, CancellationToken cancellationToken)
+    private static async Task<string> JoinDocumentsAsync(IEnumerable<YamlSource> documents, YamlPerspective perspective, CancellationToken cancellationToken)
     {
         var sb = new StringBuilder();
         var first = true;
@@ -56,7 +59,7 @@ internal class YamlProvisioner
         {
             if (!first) sb.AppendLine("---");
 
-            sb.Append(await RenderSourceAsync(document, cancellationToken));
+            sb.Append(await RenderSourceAsync(document, perspective, cancellationToken));
 
             first = false;
         }

@@ -7,9 +7,9 @@ public static class TempYamlPath
     public static string BuildTempYamlPath(string suffix)
     {
         var tempRoot = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var tempWorkingDirecotry = Path.Join(tempRoot, WorkingDirectory);
+        var tempWorkingDirectory = Path.Join(tempRoot, WorkingDirectory);
         
-        Directory.CreateDirectory(tempWorkingDirecotry);
+        Directory.CreateDirectory(tempWorkingDirectory);
 
         return Path.Join(tempRoot, WorkingDirectory, suffix);
     }
