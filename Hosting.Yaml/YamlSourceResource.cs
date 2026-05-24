@@ -19,14 +19,15 @@ public class YamlSourceResource : IResource, IValueProvider, PerspectiveAware
 
     public required string FileName { get; init; }
 
-    private readonly string hostOutputPath = BuildTempYamlPath($"{Guid.NewGuid():N}.host.yaml");
-    private readonly string containerOutputPath = BuildTempYamlPath($"{Guid.NewGuid():N}.container.yaml");
+    // Single identifier shared by both renderings — only the perspective suffix varies, so the
+    // two files sit side-by-side in the temp directory and are easy to correlate by eye.
+    private readonly string identifier = Guid.NewGuid().ToString("N");
 
     /// <summary>Path of the rendering meant for processes running directly on the developer's machine.</summary>
-    public string HostOutputPath => hostOutputPath;
+    public string HostOutputPath => BuildTempYamlPath($"{identifier}.host.yaml");
 
     /// <summary>Path of the rendering meant to be bind-mounted into a container.</summary>
-    public string ContainerOutputPath => containerOutputPath;
+    public string ContainerOutputPath => BuildTempYamlPath($"{identifier}.container.yaml");
 
     /// <summary>
     ///     Default <see cref="IValueProvider"/> view returns the host-perspective path; that's
@@ -36,8 +37,8 @@ public class YamlSourceResource : IResource, IValueProvider, PerspectiveAware
     ///     path that matches the perspective in play.
     /// </summary>
     public ValueTask<string?> GetValueAsync(CancellationToken cancellationToken = default) =>
-        new(hostOutputPath);
+        new(HostOutputPath);
 
     public ValueTask<string?> GetValueAsync(YamlPerspective perspective, CancellationToken cancellationToken) =>
-        new(perspective == YamlPerspective.Container ? containerOutputPath : hostOutputPath);
+        new(perspective == YamlPerspective.Container ? ContainerOutputPath : HostOutputPath);
 }

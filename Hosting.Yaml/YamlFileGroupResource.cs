@@ -17,18 +17,18 @@ public class YamlFileGroupResource : IResource, IResourceWithWaitSupport, IValue
 
     internal List<YamlSourceResource> Files { get; } = [];
 
-    private readonly string hostPath = BuildTempYamlPath($"{Guid.NewGuid():N}.host");
-    private readonly string containerPath = BuildTempYamlPath($"{Guid.NewGuid():N}.container");
+    // Single identifier shared by both directories — only the perspective suffix varies.
+    private readonly string identifier = Guid.NewGuid().ToString("N");
 
     /// <summary>Directory of renderings meant for host-side consumers.</summary>
-    public string HostPath => hostPath;
+    public string HostPath => BuildTempYamlPath($"{identifier}.host");
 
     /// <summary>Directory of renderings meant to be bind-mounted into a container.</summary>
-    public string ContainerPath => containerPath;
+    public string ContainerPath => BuildTempYamlPath($"{identifier}.container");
 
     public ValueTask<string?> GetValueAsync(CancellationToken cancellationToken = default) =>
-        new(hostPath);
+        new(HostPath);
 
     public ValueTask<string?> GetValueAsync(YamlPerspective perspective, CancellationToken cancellationToken) =>
-        new(perspective == YamlPerspective.Container ? containerPath : hostPath);
+        new(perspective == YamlPerspective.Container ? ContainerPath : HostPath);
 }

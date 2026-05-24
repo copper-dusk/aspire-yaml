@@ -63,7 +63,7 @@ Aspire runs services from two different vantage points inside the same
 orchestration:
 
 - **Host view** — a process the developer runs directly: a Dapr sidecar started
-  by `dapr run`, an executable resource, an integration test runner. Endpoints
+  by `dapr run`, an executable resource, an dotnet projec. Endpoints
   reach other services through Aspire's proxy at `localhost:<proxied-port>`.
 - **Container view** — a process running inside a container that Aspire puts on
   the same docker network. Endpoints reach other services by the resource's
@@ -110,9 +110,6 @@ value = new PerspectiveValue(
     container: ReferenceExpression.Create($"... container-specific layout ...")
 );
 ```
-
-The bifurcation vocabulary lives in
-`CopperDusk.Aspire.Hosting.Yaml.BifurcatedEndpoint`.
 
 ## API
 
